@@ -8,8 +8,5 @@
     "@gprabhat"
   ],
   "config_flow": true,
-  "integration_type": "service",
-  "iot_class": "calculated",
-  "requirements": [],
-  "single_config_entry": true
+  "iot_class": "calculated"
 }
