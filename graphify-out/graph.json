@@ -1,0 +1,170 @@
+{
+  "directed": false,
+  "multigraph": false,
+  "graph": {},
+  "nodes": [
+    {
+      "label": "manifest.json",
+      "file_type": "code",
+      "source_file": "custom_components/ha_auto_dashboard/manifest.json",
+      "source_location": "L1",
+      "id": "custom_components_ha_auto_dashboard_manifest_json",
+      "community": 0,
+      "norm_label": "manifest.json"
+    },
+    {
+      "label": "domain",
+      "file_type": "code",
+      "source_file": "custom_components/ha_auto_dashboard/manifest.json",
+      "source_location": "L2",
+      "id": "ha_auto_dashboard_manifest_domain",
+      "community": 0,
+      "norm_label": "domain"
+    },
+    {
+      "label": "name",
+      "file_type": "code",
+      "source_file": "custom_components/ha_auto_dashboard/manifest.json",
+      "source_location": "L3",
+      "id": "ha_auto_dashboard_manifest_name",
+      "community": 0,
+      "norm_label": "name"
+    },
+    {
+      "label": "version",
+      "file_type": "code",
+      "source_file": "custom_components/ha_auto_dashboard/manifest.json",
+      "source_location": "L4",
+      "id": "ha_auto_dashboard_manifest_version",
+      "community": 0,
+      "norm_label": "version"
+    },
+    {
+      "label": "documentation",
+      "file_type": "code",
+      "source_file": "custom_components/ha_auto_dashboard/manifest.json",
+      "source_location": "L5",
+      "id": "ha_auto_dashboard_manifest_documentation",
+      "community": 0,
+      "norm_label": "documentation"
+    },
+    {
+      "label": "codeowners",
+      "file_type": "code",
+      "source_file": "custom_components/ha_auto_dashboard/manifest.json",
+      "source_location": "L6",
+      "id": "ha_auto_dashboard_manifest_codeowners",
+      "community": 0,
+      "norm_label": "codeowners"
+    },
+    {
+      "label": "config_flow",
+      "file_type": "code",
+      "source_file": "custom_components/ha_auto_dashboard/manifest.json",
+      "source_location": "L9",
+      "id": "ha_auto_dashboard_manifest_config_flow",
+      "community": 0,
+      "norm_label": "config_flow"
+    },
+    {
+      "label": "__init__.py",
+      "file_type": "code",
+      "source_file": "custom_components/ha_auto_dashboard/__init__.py",
+      "source_location": "L1",
+      "id": "custom_components_ha_auto_dashboard_init_py",
+      "community": 2,
+      "norm_label": "__init__.py"
+    },
+    {
+      "label": "README.md",
+      "file_type": "document",
+      "source_file": "README.md",
+      "source_location": "L1",
+      "id": "readme_md",
+      "community": 1,
+      "norm_label": "readme.md"
+    },
+    {
+      "label": "HA Auto Dashboard",
+      "file_type": "document",
+      "source_file": "README.md",
+      "source_location": "L1",
+      "id": "ha_auto_dashboard_readme_ha_auto_dashboard",
+      "community": 1,
+      "norm_label": "ha auto dashboard"
+    }
+  ],
+  "links": [
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "custom_components/ha_auto_dashboard/manifest.json",
+      "source_location": "L6",
+      "weight": 1.0,
+      "source": "custom_components_ha_auto_dashboard_manifest_json",
+      "target": "ha_auto_dashboard_manifest_codeowners",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "custom_components/ha_auto_dashboard/manifest.json",
+      "source_location": "L9",
+      "weight": 1.0,
+      "source": "custom_components_ha_auto_dashboard_manifest_json",
+      "target": "ha_auto_dashboard_manifest_config_flow",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "custom_components/ha_auto_dashboard/manifest.json",
+      "source_location": "L5",
+      "weight": 1.0,
+      "source": "custom_components_ha_auto_dashboard_manifest_json",
+      "target": "ha_auto_dashboard_manifest_documentation",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "custom_components/ha_auto_dashboard/manifest.json",
+      "source_location": "L2",
+      "weight": 1.0,
+      "source": "custom_components_ha_auto_dashboard_manifest_json",
+      "target": "ha_auto_dashboard_manifest_domain",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "custom_components/ha_auto_dashboard/manifest.json",
+      "source_location": "L3",
+      "weight": 1.0,
+      "source": "custom_components_ha_auto_dashboard_manifest_json",
+      "target": "ha_auto_dashboard_manifest_name",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "custom_components/ha_auto_dashboard/manifest.json",
+      "source_location": "L4",
+      "weight": 1.0,
+      "source": "custom_components_ha_auto_dashboard_manifest_json",
+      "target": "ha_auto_dashboard_manifest_version",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "README.md",
+      "source_location": "L1",
+      "weight": 1.0,
+      "source": "readme_md",
+      "target": "ha_auto_dashboard_readme_ha_auto_dashboard",
+      "confidence_score": 1.0
+    }
+  ],
+  "hyperedges": []
+}

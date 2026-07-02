@@ -1,0 +1,15 @@
+{
+  "domain": "ha_auto_dashboard",
+  "name": "HA Auto Dashboard",
+  "version": "3.1.0",
+  "documentation": "https://github.com/gprabhat/ha-auto-dashboard",
+  "issue_tracker": "https://github.com/gprabhat/ha-auto-dashboard/issues",
+  "codeowners": [
+    "@gprabhat"
+  ],
+  "config_flow": true,
+  "integration_type": "service",
+  "iot_class": "calculated",
+  "requirements": [],
+  "single_config_entry": true
+}
