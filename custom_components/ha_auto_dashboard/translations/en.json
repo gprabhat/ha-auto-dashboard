@@ -1,0 +1,19 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Set up HA Auto Dashboard",
+        "description": "HA Auto Dashboard will scan your areas, devices and entities and keep an internal dashboard graph up to date automatically. No configuration is required."
+      }
+    },
+    "abort": {
+      "already_configured": "HA Auto Dashboard is already configured."
+    }
+  },
+  "services": {
+    "scan": {
+      "name": "Scan",
+      "description": "Re-discover areas, devices and entities and rebuild the internal dashboard graph immediately, instead of waiting for the next scheduled or registry-triggered scan."
+    }
+  }
+}

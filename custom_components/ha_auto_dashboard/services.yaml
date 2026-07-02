@@ -1,0 +1,6 @@
+scan:
+  name: Scan
+  description: >-
+    Re-discover areas, devices and entities and rebuild the internal
+    dashboard graph immediately, instead of waiting for the next scheduled
+    or registry-triggered scan.
