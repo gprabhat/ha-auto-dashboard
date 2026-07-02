@@ -1,9 +1,9 @@
 """Integration tests for the discovery graph builder against a real hass registry."""
-import pytest
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import area_registry as ar
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
+from pytest_homeassistant_custom_component.common import MockConfigEntry
 
 from custom_components.ha_auto_dashboard.const import CATEGORY_HOMELAB, CATEGORY_ROOM
 from custom_components.ha_auto_dashboard.discovery.graph_builder import async_build_graph
@@ -16,9 +16,11 @@ async def test_build_graph_links_area_device_entity(hass: HomeAssistant) -> None
 
     kitchen = area_registry.async_create("Kitchen")
 
-    entry = None
+    config_entry = MockConfigEntry(domain="mock")
+    config_entry.add_to_hass(hass)
+
     device = device_registry.async_get_or_create(
-        config_entry_id="mock-config-entry",
+        config_entry_id=config_entry.entry_id,
         identifiers={("mock", "light-hub-1")},
         name="Kitchen Light Hub",
     )
