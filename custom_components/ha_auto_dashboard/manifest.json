@@ -1,7 +1,7 @@
 {
   "domain": "ha_auto_dashboard",
   "name": "HA Auto Dashboard",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "documentation": "https://github.com/gprabhat/ha-auto-dashboard",
   "issue_tracker": "https://github.com/gprabhat/ha-auto-dashboard/issues",
   "codeowners": [
