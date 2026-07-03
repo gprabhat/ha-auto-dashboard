@@ -70,7 +70,13 @@ async def async_install_dashboards(hass: HomeAssistant, dashboards: dict[str, di
                 "Add this to `configuration.yaml` and restart Home Assistant "
                 "to register them (one-time step - future scans just "
                 "rewrite the same files):\n\n"
-                f"```yaml\n{snippet}\n```"
+                f"```yaml\n{snippet}\n```\n\n"
+                "These dashboards use Mushroom, Bubble Card and "
+                "mini-graph-card, which must be installed as HACS frontend "
+                "resources (HACS > Frontend > search each by name) or the "
+                "cards will show as 'custom element doesn't exist'. A "
+                "Material You-style theme (e.g. via HACS > Frontend > "
+                "\"Material You\") is recommended to match their look."
             ),
         },
         blocking=True,

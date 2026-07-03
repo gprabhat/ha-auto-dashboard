@@ -58,3 +58,27 @@ NETWORK_KEYWORDS: Final[tuple[str, ...]] = (
 )
 
 UPDATE_DOMAIN: Final = "update"
+
+# Domains rendered with a Mushroom-specific card; anything else falls back to
+# the generic custom:mushroom-entity-card. Requires the "Mushroom" HACS
+# frontend package to be installed as a Lovelace resource.
+MUSHROOM_DOMAIN_CARDS: Final[dict[str, str]] = {
+    "light": "custom:mushroom-light-card",
+    "climate": "custom:mushroom-climate-card",
+    "cover": "custom:mushroom-cover-card",
+    "fan": "custom:mushroom-fan-card",
+    "lock": "custom:mushroom-lock-card",
+    "media_player": "custom:mushroom-media-player-card",
+    "vacuum": "custom:mushroom-vacuum-card",
+    "alarm_control_panel": "custom:mushroom-alarm-control-panel-card",
+    "person": "custom:mushroom-person-card",
+    "update": "custom:mushroom-update-card",
+    "humidifier": "custom:mushroom-humidifier-card",
+    "water_heater": "custom:mushroom-water-heater-card",
+    "number": "custom:mushroom-number-card",
+    "select": "custom:mushroom-select-card",
+}
+MUSHROOM_GENERIC_CARD: Final = "custom:mushroom-entity-card"
+
+# Domains that natively carry a live location and belong on a map card.
+LOCATION_DOMAINS: Final[tuple[str, ...]] = ("person", "device_tracker")
