@@ -14,6 +14,10 @@ DATA_COORDINATOR: Final = "coordinator"
 
 # Services
 SERVICE_SCAN: Final = "scan"
+SERVICE_GENERATE: Final = "generate"
+
+# Where compiled dashboard YAML files are written, relative to the HA config dir.
+DASHBOARD_OUTPUT_DIR: Final = "dashboards"
 
 # Signal fired after a scan completes, carries the graph statistics.
 SIGNAL_GRAPH_UPDATED: Final = f"{DOMAIN}_graph_updated"
