@@ -74,6 +74,7 @@ class EntityNode:
     disabled: bool = False
     hidden: bool = False
     category: str = "other"
+    unit_of_measurement: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -87,6 +88,7 @@ class EntityNode:
             "disabled": self.disabled,
             "hidden": self.hidden,
             "category": self.category,
+            "unit_of_measurement": self.unit_of_measurement,
         }
 
 

@@ -3,13 +3,18 @@ from custom_components.ha_auto_dashboard.const import CATEGORY_HOMELAB, CATEGORY
 from custom_components.ha_auto_dashboard.dashboard.card_builder import (
     area_card,
     device_card,
-    entities_card,
-    picture_entity_card,
+    entity_card,
+    is_graphable,
+    map_card,
+    mini_graph_card,
+    mushroom_card,
+    picture_glance_card,
 )
 from custom_components.ha_auto_dashboard.dashboard.compiler import (
     DASHBOARD_CLOUD,
     DASHBOARD_HOME,
     DASHBOARD_HOMELAB,
+    DASHBOARD_MONITORING,
     DASHBOARD_ROOMS,
     DASHBOARD_SECURITY,
     compile_dashboards,
@@ -40,6 +45,7 @@ def _sample_graph() -> RegistryGraph:
         domain="sensor",
         device_id="pve1",
         category=CATEGORY_HOMELAB,
+        unit_of_measurement="%",
     )
     pve.entity_ids.append(cpu_sensor.entity_id)
     graph.devices["pve1"] = pve
@@ -67,33 +73,75 @@ def test_area_card() -> None:
     assert area_card(area) == {"type": "area", "area": "kitchen"}
 
 
-def test_entities_card_omitted_when_empty() -> None:
-    assert entities_card("Empty", []) is None
-    assert entities_card("Lights", ["light.a"]) == {
-        "type": "entities",
-        "title": "Lights",
-        "entities": ["light.a"],
-    }
+def test_mushroom_card_uses_domain_specific_type() -> None:
+    light = EntityNode(entity_id="light.a", name="A", domain="light")
+    assert mushroom_card(light) == {"type": "custom:mushroom-light-card", "entity": "light.a"}
+
+
+def test_mushroom_card_falls_back_to_generic_for_unmapped_domain() -> None:
+    switch = EntityNode(entity_id="switch.a", name="A", domain="switch")
+    assert mushroom_card(switch) == {"type": "custom:mushroom-entity-card", "entity": "switch.a"}
+
+
+def test_is_graphable_requires_sensor_domain_and_unit() -> None:
+    graphable = EntityNode(entity_id="sensor.a", name="A", domain="sensor", unit_of_measurement="W")
+    non_numeric_sensor = EntityNode(entity_id="sensor.b", name="B", domain="sensor")
+    non_sensor = EntityNode(entity_id="switch.a", name="A", domain="switch", unit_of_measurement="W")
+
+    assert is_graphable(graphable) is True
+    assert is_graphable(non_numeric_sensor) is False
+    assert is_graphable(non_sensor) is False
+
+
+def test_entity_card_routes_graphable_sensors_to_mini_graph() -> None:
+    sensor = EntityNode(entity_id="sensor.a", name="A", domain="sensor", unit_of_measurement="W")
+    assert entity_card(sensor) == mini_graph_card(sensor)
+    assert entity_card(sensor)["type"] == "custom:mini-graph-card"
+
+
+def test_entity_card_routes_others_to_mushroom() -> None:
+    light = EntityNode(entity_id="light.a", name="A", domain="light")
+    assert entity_card(light) == mushroom_card(light)
 
 
 def test_device_card_excludes_disabled_entities() -> None:
     graph = RegistryGraph()
     device = DeviceNode(device_id="d1", name="Hub")
-    visible = EntityNode(entity_id="sensor.a", name="A", domain="sensor", device_id="d1")
-    disabled = EntityNode(entity_id="sensor.b", name="B", domain="sensor", device_id="d1", disabled=True)
+    visible = EntityNode(entity_id="switch.a", name="A", domain="switch", device_id="d1")
+    disabled = EntityNode(entity_id="switch.b", name="B", domain="switch", device_id="d1", disabled=True)
     device.entity_ids = [visible.entity_id, disabled.entity_id]
     graph.devices["d1"] = device
     graph.entities[visible.entity_id] = visible
     graph.entities[disabled.entity_id] = disabled
 
     card = device_card(device, graph)
-    assert card == {"type": "entities", "title": "Hub", "entities": ["sensor.a"]}
+    assert card is not None
+    assert card["type"] == "vertical-stack"
+    grid_card = card["cards"][1]
+    assert grid_card["type"] == "grid"
+    assert grid_card["cards"] == [mushroom_card(visible)]
 
 
-def test_picture_entity_card() -> None:
-    assert picture_entity_card("camera.front_door") == {
-        "type": "picture-entity",
-        "entity": "camera.front_door",
+def test_device_card_none_when_no_visible_entities() -> None:
+    graph = RegistryGraph()
+    device = DeviceNode(device_id="d1", name="Hub")
+    graph.devices["d1"] = device
+    assert device_card(device, graph) is None
+
+
+def test_map_card() -> None:
+    assert map_card(["person.alice"], title="Family") == {
+        "type": "map",
+        "entities": [{"entity": "person.alice"}],
+        "title": "Family",
+    }
+
+
+def test_picture_glance_card() -> None:
+    assert picture_glance_card("camera.front_door", ["binary_sensor.motion"]) == {
+        "type": "picture-glance",
+        "camera_image": "camera.front_door",
+        "entities": ["binary_sensor.motion"],
     }
 
 
@@ -113,22 +161,38 @@ def test_compile_dashboards_produces_expected_slugs() -> None:
 def test_compile_dashboards_home_has_area_card() -> None:
     dashboards = compile_dashboards(_sample_graph())
     home_cards = dashboards[DASHBOARD_HOME]["views"][0]["cards"]
-    assert {"type": "area", "area": "kitchen"} in home_cards
+    grid_cards = next(c for c in home_cards if c.get("type") == "grid")
+    assert {"type": "area", "area": "kitchen"} in grid_cards["cards"]
 
 
 def test_compile_dashboards_rooms_has_one_view_per_area() -> None:
     dashboards = compile_dashboards(_sample_graph())
     rooms_views = dashboards[DASHBOARD_ROOMS]["views"]
     assert [view["path"] for view in rooms_views] == ["kitchen"]
-    assert rooms_views[0]["cards"] == [
-        {"type": "entities", "title": "Kitchen", "entities": ["light.kitchen_ceiling"]}
+    grid_card = rooms_views[0]["cards"][1]
+    assert grid_card["cards"] == [
+        {"type": "custom:mushroom-light-card", "entity": "light.kitchen_ceiling"}
     ]
 
 
-def test_compile_dashboards_security_separates_cameras() -> None:
+def test_compile_dashboards_homelab_uses_mini_graph_for_numeric_sensor() -> None:
+    dashboards = compile_dashboards(_sample_graph())
+    homelab_cards = dashboards[DASHBOARD_HOMELAB]["views"][0]["cards"]
+    device_stack = homelab_cards[0]
+    grid_card = device_stack["cards"][1]
+    assert grid_card["cards"][0]["type"] == "custom:mini-graph-card"
+
+
+def test_compile_dashboards_security_uses_picture_glance_for_camera() -> None:
     dashboards = compile_dashboards(_sample_graph())
     security_cards = dashboards[DASHBOARD_SECURITY]["views"][0]["cards"]
-    assert {"type": "picture-entity", "entity": "camera.front_door"} in security_cards
+    assert any(c.get("type") == "picture-glance" for c in security_cards)
+
+
+def test_compile_dashboards_monitoring_omitted_when_empty() -> None:
+    dashboards = compile_dashboards(_sample_graph())
+    monitoring_cards = dashboards[DASHBOARD_MONITORING]["views"][0]["cards"]
+    assert monitoring_cards == [{"type": "markdown", "content": "No monitoring entities discovered yet."}]
 
 
 def test_compile_dashboards_cloud_only_when_cloud_area_present() -> None:
@@ -146,6 +210,5 @@ def test_compile_dashboards_cloud_only_when_cloud_area_present() -> None:
 
     dashboards = compile_dashboards(graph)
     assert DASHBOARD_CLOUD in dashboards
-    assert dashboards[DASHBOARD_CLOUD]["views"][0]["cards"] == [
-        {"type": "entities", "title": "Cloud Server", "entities": [entity.entity_id]}
-    ]
+    grid_card = dashboards[DASHBOARD_CLOUD]["views"][0]["cards"][1]
+    assert grid_card["cards"] == [{"type": "custom:mushroom-entity-card", "entity": entity.entity_id}]

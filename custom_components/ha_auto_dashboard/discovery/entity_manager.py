@@ -21,6 +21,13 @@ def collect_entities(
         device = devices.get(entry.device_id) if entry.device_id else None
         area_id = entry.area_id or (device.area_id if device else None)
         name = entry.name or entry.original_name or entry.entity_id
+
+        # Unit of measurement lives on the entity's current state, not the
+        # registry, so it's only known for entities that have loaded at
+        # least once. Used to decide which entities get a history graph.
+        state = hass.states.get(entry.entity_id)
+        unit_of_measurement = state.attributes.get("unit_of_measurement") if state else None
+
         entities[entry.entity_id] = EntityNode(
             entity_id=entry.entity_id,
             name=name,
@@ -31,5 +38,6 @@ def collect_entities(
             platform=entry.platform,
             disabled=entry.disabled_by is not None,
             hidden=entry.hidden_by is not None,
+            unit_of_measurement=unit_of_measurement,
         )
     return entities
