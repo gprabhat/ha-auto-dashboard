@@ -1,17 +1,17 @@
-"""Tests for writing compiled dashboards to disk and notifying the user."""
+"""Tests for writing compiled dashboards to disk."""
 from pathlib import Path
 
 import yaml
 from homeassistant.core import HomeAssistant
-from homeassistant.setup import async_setup_component
 
 from custom_components.ha_auto_dashboard.const import DASHBOARD_OUTPUT_DIR
-from custom_components.ha_auto_dashboard.dashboard.installer import async_install_dashboards
+from custom_components.ha_auto_dashboard.dashboard.installer import (
+    async_install_dashboards,
+    configuration_snippet,
+)
 
 
 async def test_install_dashboards_writes_yaml_files(hass: HomeAssistant) -> None:
-    await async_setup_component(hass, "persistent_notification", {})
-
     dashboards = {
         "auto_home": {
             "title": "Home",
@@ -31,15 +31,15 @@ async def test_install_dashboards_writes_yaml_files(hass: HomeAssistant) -> None
     assert content == {"views": dashboards["auto_home"]["views"]}
 
 
-async def test_install_dashboards_creates_notification(hass: HomeAssistant) -> None:
-    await async_setup_component(hass, "persistent_notification", {})
-
+def test_configuration_snippet_one_entry_per_dashboard() -> None:
     dashboards = {
-        "auto_home": {"title": "Home", "icon": "mdi:home", "views": [{"title": "Home", "cards": []}]},
+        "auto_home": {"title": "Home", "icon": "mdi:home", "views": []},
+        "auto_rooms": {"title": "Rooms", "icon": "mdi:floor-plan", "views": []},
     }
 
-    # persistent_notification doesn't expose an entity/state - just an
-    # internal dict and a dispatcher signal - so the only thing we can
-    # black-box assert here is that raising it doesn't raise (e.g. because
-    # the service call's data doesn't match its schema).
-    await async_install_dashboards(hass, dashboards)
+    snippet = configuration_snippet(dashboards)
+
+    assert "auto-home:" in snippet
+    assert "auto-rooms:" in snippet
+    assert "filename: dashboards/auto_home.yaml" in snippet
+    assert "title: Home" in snippet

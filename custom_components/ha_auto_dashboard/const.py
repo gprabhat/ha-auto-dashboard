@@ -80,5 +80,19 @@ MUSHROOM_DOMAIN_CARDS: Final[dict[str, str]] = {
 }
 MUSHROOM_GENERIC_CARD: Final = "custom:mushroom-entity-card"
 
+# Native HA card fallback per domain, used when Mushroom isn't installed.
+NATIVE_DOMAIN_CARDS: Final[dict[str, str]] = {
+    "light": "light",
+    "climate": "thermostat",
+    "media_player": "media-control",
+    "alarm_control_panel": "alarm-panel",
+    "humidifier": "humidifier",
+}
+NATIVE_GENERIC_CARD: Final = "tile"
+
 # Domains that natively carry a live location and belong on a map card.
 LOCATION_DOMAINS: Final[tuple[str, ...]] = ("person", "device_tracker")
+
+# Repairs issue ids.
+ISSUE_MISSING_RESOURCES: Final = "missing_frontend_resources"
+ISSUE_REGISTER_DASHBOARDS: Final = "register_dashboards"
