@@ -19,5 +19,15 @@
       "name": "Generate",
       "description": "Recompile the Home, Rooms, Homelab, Security, Monitoring, Admin and Cloud dashboards from the current discovery graph and write them to the dashboards/ folder, without doing a fresh scan first."
     }
+  },
+  "issues": {
+    "missing_frontend_resources": {
+      "title": "Some dashboard cards need HACS frontend resources",
+      "description": "The generated dashboards use {missing} for some cards, which aren't detected as installed Lovelace resources yet. Install them via HACS → Frontend, then wait for the next scan (or call `ha_auto_dashboard.generate`) to switch those cards over. Dashboards still work without them - the affected cards just use a plain built-in fallback in the meantime."
+    },
+    "register_dashboards": {
+      "title": "Generated dashboards need one paste into configuration.yaml",
+      "description": "Add this to `configuration.yaml` and restart Home Assistant to register the generated dashboards (one-time step - future scans just rewrite the same files in place):\n\n```yaml\n{snippet}\n```"
+    }
   }
 }

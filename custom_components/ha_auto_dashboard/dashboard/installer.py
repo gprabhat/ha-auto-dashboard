@@ -1,13 +1,12 @@
-"""Writes compiled dashboards to disk and prompts the user to register them.
+"""Writes compiled dashboards to disk.
 
 Home Assistant does not expose a stable, public API for a custom integration
 to register a YAML-mode Lovelace dashboard at runtime (that's normally done
 via a `lovelace:` block in configuration.yaml, parsed at core startup). So
 this stops one step short of fully automatic installation: it writes ready
-to use YAML files under `<config>/dashboards/` and raises a persistent
-notification with the exact snippet needed to register them, once, in
-configuration.yaml. Every subsequent regeneration just rewrites the same
-files in place - no further manual steps are needed after that.
+to use YAML files under `<config>/dashboards/`. The one-time registration
+snippet is surfaced as a Repairs issue (see `.issues`), not from here, so
+this module only touches disk.
 """
 from __future__ import annotations
 
@@ -17,11 +16,9 @@ from pathlib import Path
 import yaml
 from homeassistant.core import HomeAssistant
 
-from ..const import DASHBOARD_OUTPUT_DIR, DOMAIN
+from ..const import DASHBOARD_OUTPUT_DIR
 
 _LOGGER = logging.getLogger(__name__)
-
-_NOTIFICATION_ID = f"{DOMAIN}_install_dashboards"
 
 
 def _write_dashboard_files(config_dir: str, dashboards: dict[str, dict]) -> list[str]:
@@ -39,7 +36,9 @@ def _write_dashboard_files(config_dir: str, dashboards: dict[str, dict]) -> list
     return written
 
 
-def _configuration_snippet(dashboards: dict[str, dict]) -> str:
+def configuration_snippet(dashboards: dict[str, dict]) -> str:
+    """The `lovelace: dashboards:` configuration.yaml block that registers
+    every generated dashboard under its own URL path."""
     lines = ["lovelace:", "  dashboards:"]
     for slug, dashboard in dashboards.items():
         url_path = slug.replace("_", "-")
@@ -52,34 +51,9 @@ def _configuration_snippet(dashboards: dict[str, dict]) -> str:
 
 
 async def async_install_dashboards(hass: HomeAssistant, dashboards: dict[str, dict]) -> list[str]:
-    """Write compiled dashboards to disk and notify the registration snippet."""
+    """Write compiled dashboards to `<config>/dashboards/*.yaml`."""
     written = await hass.async_add_executor_job(
         _write_dashboard_files, hass.config.config_dir, dashboards
     )
     _LOGGER.info("HA Auto Dashboard wrote %d dashboard file(s): %s", len(written), written)
-
-    snippet = _configuration_snippet(dashboards)
-    await hass.services.async_call(
-        "persistent_notification",
-        "create",
-        {
-            "notification_id": _NOTIFICATION_ID,
-            "title": "HA Auto Dashboard: dashboards ready",
-            "message": (
-                f"Generated {len(written)} dashboard(s) in `dashboards/`. "
-                "Add this to `configuration.yaml` and restart Home Assistant "
-                "to register them (one-time step - future scans just "
-                "rewrite the same files):\n\n"
-                f"```yaml\n{snippet}\n```\n\n"
-                "These dashboards use Mushroom, Bubble Card and "
-                "mini-graph-card, which must be installed as HACS frontend "
-                "resources (HACS > Frontend > search each by name) or the "
-                "cards will show as 'custom element doesn't exist'. A "
-                "Material You-style theme (e.g. via HACS > Frontend > "
-                "\"Material You\") is recommended to match their look."
-            ),
-        },
-        blocking=True,
-    )
-
     return written
