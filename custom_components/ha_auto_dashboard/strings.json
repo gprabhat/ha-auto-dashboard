@@ -13,7 +13,11 @@
   "services": {
     "scan": {
       "name": "Scan",
-      "description": "Re-discover areas, devices and entities and rebuild the internal dashboard graph immediately, instead of waiting for the next scheduled or registry-triggered scan."
+      "description": "Re-discover areas, devices and entities and rebuild the internal dashboard graph immediately, instead of waiting for the next scheduled or registry-triggered scan. Also regenerates dashboards once the scan completes."
+    },
+    "generate": {
+      "name": "Generate",
+      "description": "Recompile the Home, Rooms, Homelab, Security, Monitoring, Admin and Cloud dashboards from the current discovery graph and write them to the dashboards/ folder, without doing a fresh scan first."
     }
   }
 }

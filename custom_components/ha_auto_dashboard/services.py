@@ -5,14 +5,15 @@ import logging
 
 from homeassistant.core import HomeAssistant, ServiceCall
 
-from .const import DATA_COORDINATOR, DOMAIN, SERVICE_SCAN
+from .const import DATA_COORDINATOR, DOMAIN, SERVICE_GENERATE, SERVICE_SCAN
 from .coordinator import DiscoveryCoordinator
+from .dashboard import async_generate_and_install
 
 _LOGGER = logging.getLogger(__name__)
 
 
 def async_setup_services(hass: HomeAssistant) -> None:
-    """Register the `ha_auto_dashboard.scan` action, if not already registered."""
+    """Register the `ha_auto_dashboard.*` actions, if not already registered."""
     if hass.services.has_service(DOMAIN, SERVICE_SCAN):
         return
 
@@ -25,10 +26,20 @@ def async_setup_services(hass: HomeAssistant) -> None:
                 if coordinator.data else "no data"
             )
 
+    async def _async_handle_generate(call: ServiceCall) -> None:
+        for entry_data in hass.data.get(DOMAIN, {}).values():
+            coordinator: DiscoveryCoordinator = entry_data[DATA_COORDINATOR]
+            if coordinator.data is None:
+                continue
+            written = await async_generate_and_install(hass, coordinator.data)
+            _LOGGER.info("HA Auto Dashboard generate complete: %s", written)
+
     hass.services.async_register(DOMAIN, SERVICE_SCAN, _async_handle_scan)
+    hass.services.async_register(DOMAIN, SERVICE_GENERATE, _async_handle_generate)
 
 
 def async_unload_services(hass: HomeAssistant) -> None:
-    """Remove the `ha_auto_dashboard.scan` action once the last entry unloads."""
+    """Remove the `ha_auto_dashboard.*` actions once the last entry unloads."""
     if not hass.data.get(DOMAIN):
         hass.services.async_remove(DOMAIN, SERVICE_SCAN)
+        hass.services.async_remove(DOMAIN, SERVICE_GENERATE)

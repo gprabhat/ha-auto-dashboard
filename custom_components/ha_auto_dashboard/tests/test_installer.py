@@ -1,0 +1,44 @@
+"""Tests for writing compiled dashboards to disk and notifying the user."""
+from pathlib import Path
+
+import yaml
+from homeassistant.core import HomeAssistant
+from homeassistant.setup import async_setup_component
+
+from custom_components.ha_auto_dashboard.const import DASHBOARD_OUTPUT_DIR
+from custom_components.ha_auto_dashboard.dashboard.installer import async_install_dashboards
+
+
+async def test_install_dashboards_writes_yaml_files(hass: HomeAssistant) -> None:
+    await async_setup_component(hass, "persistent_notification", {})
+
+    dashboards = {
+        "auto_home": {
+            "title": "Home",
+            "icon": "mdi:home",
+            "views": [{"title": "Home", "path": "home", "cards": [{"type": "area", "area": "kitchen"}]}],
+        }
+    }
+
+    written = await async_install_dashboards(hass, dashboards)
+
+    assert len(written) == 1
+    output_path = Path(hass.config.config_dir) / DASHBOARD_OUTPUT_DIR / "auto_home.yaml"
+    assert str(output_path) == written[0]
+    assert output_path.exists()
+
+    content = yaml.safe_load(output_path.read_text(encoding="utf-8"))
+    assert content == {"views": dashboards["auto_home"]["views"]}
+
+
+async def test_install_dashboards_creates_notification(hass: HomeAssistant) -> None:
+    await async_setup_component(hass, "persistent_notification", {})
+
+    dashboards = {
+        "auto_home": {"title": "Home", "icon": "mdi:home", "views": [{"title": "Home", "cards": []}]},
+    }
+    await async_install_dashboards(hass, dashboards)
+    await hass.async_block_till_done()
+
+    state = hass.states.get("persistent_notification.ha_auto_dashboard_install_dashboards")
+    assert state is not None

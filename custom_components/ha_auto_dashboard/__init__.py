@@ -6,6 +6,7 @@ from homeassistant.core import HomeAssistant
 
 from .const import DATA_COORDINATOR, DOMAIN
 from .coordinator import DiscoveryCoordinator
+from .dashboard import async_generate_and_install
 from .services import async_setup_services, async_unload_services
 
 PLATFORMS: list[str] = []
@@ -14,11 +15,25 @@ PLATFORMS: list[str] = []
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up HA Auto Dashboard from a config entry."""
     coordinator = DiscoveryCoordinator(hass)
+
+    async def _async_regenerate_dashboards() -> None:
+        if coordinator.data is not None:
+            await async_generate_and_install(hass, coordinator.data)
+
+    def _schedule_regenerate() -> None:
+        hass.async_create_task(_async_regenerate_dashboards())
+
     await coordinator.async_config_entry_first_refresh()
     coordinator.async_setup_registry_listeners()
+    remove_listener = coordinator.async_add_listener(_schedule_regenerate)
+
+    # Every subsequent scan (registry change or the 6h safety-net poll) keeps
+    # the generated dashboards in sync automatically.
+    await _async_regenerate_dashboards()
 
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = {
         DATA_COORDINATOR: coordinator,
+        "remove_listener": remove_listener,
     }
 
     async_setup_services(hass)
@@ -30,6 +45,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
     entry_data = hass.data.get(DOMAIN, {}).pop(entry.entry_id, None)
     if entry_data:
+        entry_data["remove_listener"]()
         coordinator: DiscoveryCoordinator = entry_data[DATA_COORDINATOR]
         coordinator.async_unload()
 
