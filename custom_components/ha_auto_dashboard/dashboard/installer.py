@@ -73,7 +73,7 @@ async def async_install_dashboards(hass: HomeAssistant, dashboards: dict[str, di
                 f"```yaml\n{snippet}\n```"
             ),
         },
-        blocking=False,
+        blocking=True,
     )
 
     return written
