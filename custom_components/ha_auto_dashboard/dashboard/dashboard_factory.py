@@ -8,7 +8,7 @@ from ..const import (
     CATEGORY_UPDATES,
     LOCATION_DOMAINS,
 )
-from ..models import RegistryGraph
+from ..models import EntityNode, RegistryGraph
 from .card_builder import (
     CardTheme,
     area_card,
@@ -22,20 +22,47 @@ from .card_builder import (
     mushroom_title_card,
     picture_glance_card,
     toggle_entities_chip,
-    vertical_stack,
     visible_entities,
     weather_chip,
 )
 from .icons import guess_area_icon
 
+# Domain groups used to split a mixed-domain set of entities into titled,
+# neatly-boxed sections instead of one flat grid. Switches/locks get a
+# smaller column count than the rest, so each tile renders noticeably
+# bigger - simple toggles read better big, dense sensor grids read better
+# small.
+_DOMAIN_GROUPS: tuple[tuple[str, frozenset[str], int | None], ...] = (
+    ("Lights", frozenset({"light"}), None),
+    ("Climate & Covers", frozenset({"climate", "cover", "fan"}), None),
+    ("Media", frozenset({"media_player"}), None),
+    ("Switches & Locks", frozenset({"switch", "lock", "input_boolean"}), 2),
+    ("Sensors", frozenset({"sensor", "binary_sensor"}), None),
+)
 
-def _category_entities(graph: RegistryGraph, category: str) -> list:
+
+def _grouped_grid_cards(entities: list[EntityNode], theme: CardTheme) -> list[dict]:
+    """Split mixed-domain entities into titled, domain-grouped grid cards."""
+    remaining = list(entities)
+    cards: list[dict] = []
+    for title, domains, columns in _DOMAIN_GROUPS:
+        group = [e for e in remaining if e.domain in domains]
+        if not group:
+            continue
+        remaining = [e for e in remaining if e not in group]
+        cards.append(grid([theme.entity(e) for e in group], columns=columns, title=title))
+    if remaining:
+        cards.append(grid([theme.entity(e) for e in remaining], title="Other"))
+    return cards
+
+
+def _category_entities(graph: RegistryGraph, category: str) -> list[EntityNode]:
     return visible_entities(
         [graph.entities[eid] for eid in graph.categories.get(category, []) if eid in graph.entities]
     )
 
 
-def _area_entities(graph: RegistryGraph, area_id: str) -> list:
+def _area_entities(graph: RegistryGraph, area_id: str) -> list[EntityNode]:
     return visible_entities(
         [graph.entities[eid] for eid in graph.areas[area_id].entity_ids if eid in graph.entities]
     )
@@ -67,8 +94,7 @@ def build_home_view(graph: RegistryGraph, theme: CardTheme) -> dict:
 
     areas = sorted(graph.areas.values(), key=lambda a: a.name)
     if areas:
-        cards.append(theme.separator("Rooms", icon="mdi:floor-plan"))
-        cards.append(grid([area_card(area) for area in areas]))
+        cards.append(grid([area_card(area) for area in areas], title="Rooms"))
 
     highlight_ids = [
         entity.entity_id
@@ -89,13 +115,9 @@ def build_rooms_views(graph: RegistryGraph, theme: CardTheme) -> list[dict]:
     for area in sorted(graph.areas.values(), key=lambda a: a.name):
         entities = _area_entities(graph, area.area_id)
         icon = area.icon or guess_area_icon(area.name)
-        if entities:
-            cards = [
-                theme.separator(area.name, icon=icon),
-                grid([theme.entity(entity) for entity in entities]),
-            ]
-        else:
-            cards = [markdown_card("No entities in this area yet.")]
+        # The area name is already the view's own tab title, so sections
+        # here are grouped by domain instead of repeating it.
+        cards = _grouped_grid_cards(entities, theme) or [markdown_card("No entities in this area yet.")]
         views.append({"title": area.name, "path": area.area_id, "icon": icon, "cards": cards})
     if not views:
         views = [{"title": "Rooms", "path": "rooms", "cards": [markdown_card("No areas discovered yet.")]}]
@@ -112,9 +134,7 @@ def build_homelab_view(graph: RegistryGraph, theme: CardTheme) -> dict:
     device_entity_ids = {eid for device in devices for eid in device.entity_ids}
     orphans = [e for e in _category_entities(graph, CATEGORY_HOMELAB) if e.entity_id not in device_entity_ids]
     if orphans:
-        cards.append(
-            vertical_stack([theme.separator("Other"), grid([theme.entity(e) for e in orphans])])
-        )
+        cards.append(grid([theme.entity(e) for e in orphans], title="Other"))
 
     return {
         "title": "Homelab",
@@ -133,11 +153,10 @@ def build_security_view(graph: RegistryGraph, theme: CardTheme) -> dict:
     cards: list[dict] = []
     for camera in cameras:
         sibling_ids = [e.entity_id for e in others if camera.device_id and e.device_id == camera.device_id]
-        cards.append(picture_glance_card(camera.entity_id, sibling_ids))
+        cards.append(picture_glance_card(camera.entity_id, sibling_ids, title=camera.name))
 
     other_only = [e for e in others if e.device_id not in camera_device_ids]
-    if other_only:
-        cards.append(grid([theme.entity(e) for e in other_only]))
+    cards.extend(_grouped_grid_cards(other_only, theme))
 
     if card := logbook_card([e.entity_id for e in entities]):
         cards.append(theme.separator("Recent Events", icon="mdi:history"))
@@ -160,9 +179,9 @@ def build_monitoring_view(graph: RegistryGraph, theme: CardTheme) -> dict:
     if trend_card := history_graph_card("Network Trends", [e.entity_id for e in graphable]):
         cards.append(trend_card)
     if graphable:
-        cards.append(grid([theme.graph(e) for e in graphable]))
+        cards.append(grid([theme.graph(e) for e in graphable], title="Individual Sensors"))
     if other:
-        cards.append(grid([theme.entity(e) for e in other]))
+        cards.append(grid([theme.entity(e) for e in other], title="Status"))
 
     return {
         "title": "Monitoring",
@@ -176,7 +195,7 @@ def build_admin_view(graph: RegistryGraph, theme: CardTheme) -> dict:
     entities = _category_entities(graph, CATEGORY_UPDATES)
     cards: list[dict] = []
     if entities:
-        cards.append(grid([theme.entity(e) for e in entities]))
+        cards.append(grid([theme.entity(e) for e in entities], title="Updates"))
     if card := logbook_card([e.entity_id for e in entities]):
         cards.append(theme.separator("Update History", icon="mdi:history"))
         cards.append(card)
@@ -203,8 +222,7 @@ def build_cloud_view(graph: RegistryGraph, theme: CardTheme) -> dict | None:
     for area in sorted(cloud_areas, key=lambda a: a.name):
         entities = _area_entities(graph, area.area_id)
         if entities:
-            cards.append(theme.separator(area.name, icon="mdi:cloud"))
-            cards.append(grid([theme.entity(e) for e in entities]))
+            cards.append(grid([theme.entity(e) for e in entities], title=area.name))
 
     if not cards:
         return None

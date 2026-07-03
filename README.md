@@ -25,17 +25,17 @@ Early / actively developed. Phases 1-3 of the roadmap are implemented and covere
 | **Admin** | Update entities as actionable cards, plus an update history logbook |
 | **Cloud** | Only generated if an area name contains "cloud" (e.g. a cloud/VPS host area) |
 
-Cards are chosen per entity domain rather than falling back to a flat list: lights, climate, covers, fans, locks, media players, vacuums, alarms, people and updates each get their own [Mushroom](https://github.com/piitaya/lovelace-mushroom) card type, numeric sensors get [mini-graph-card](https://github.com/kalkih/mini-graph-card) trend lines, and section headers use [Bubble Card](https://github.com/Clooos/Bubble-Card) separators.
+Cards are chosen per entity domain rather than falling back to a flat list: lights, climate, covers, fans, locks, media players, vacuums, alarms, people and updates each get their own [Mushroom](https://github.com/piitaya/lovelace-mushroom) card type, and numeric sensors get [mini-graph-card](https://github.com/kalkih/mini-graph-card) trend lines. Within a view, entities are grouped into titled boxes by domain (Lights, Climate & Covers, Media, Switches & Locks, Sensors, Other) instead of one long mixed list - switches and locks get a smaller column count than the rest so their tiles render noticeably bigger, since a simple toggle needs less detail per tile than a sensor graph.
 
 ### Frontend resources you need installed
 
-The generated dashboards assume these are already installed as HACS **Frontend** resources (not part of this integration - install them separately via HACS):
+The generated dashboards prefer these HACS **Frontend** resources (not part of this integration - install them separately via HACS):
 
 - [Mushroom](https://github.com/piitaya/lovelace-mushroom)
-- [Bubble Card](https://github.com/Clooos/Bubble-Card)
+- [Bubble Card](https://github.com/Clooos/Bubble-Card) (used for a couple of text separators; most section headings use the native `grid` card's own title instead)
 - [mini-graph-card](https://github.com/kalkih/mini-graph-card)
 
-If any of these are missing, the affected cards will show a "custom element doesn't exist" error in Lovelace - the rest of the dashboard still works. A [Material You](https://community.home-assistant.io/t/material-you-theme-and-utilities-a-fully-featured-implementation-of-material-design-3-expressive-for-home-assistant/623242)-style theme is recommended to match their look, but isn't required.
+The integration checks the Lovelace resources collection before generating: anything not detected as installed falls back to a native HA card instead (`tile`/`light`/`thermostat`/`media-control`/`alarm-panel`/`humidifier`/`heading`/`button`/`sensor` with an inline graph), so a dashboard never ships a "custom element doesn't exist" card. If something's missing, you'll see a **Repairs** issue in Settings listing exactly what to install - it clears itself automatically once detected. A [Material You](https://community.home-assistant.io/t/material-you-theme-and-utilities-a-fully-featured-implementation-of-material-design-3-expressive-for-home-assistant/623242)-style theme is recommended to match their look, but isn't required.
 
 ## Installation
 
@@ -53,7 +53,7 @@ Copy `custom_components/ha_auto_dashboard/` into `<config>/custom_components/ha_
 
 ## Registering the generated dashboards (one-time step)
 
-Home Assistant has no stable API for a custom integration to register a YAML-mode Lovelace dashboard at runtime, so after the first scan you'll get a persistent notification titled **"HA Auto Dashboard: dashboards ready"** containing a snippet like:
+Home Assistant has no stable API for a custom integration to register a YAML-mode Lovelace dashboard at runtime, so after the first scan you'll get a **Repairs** issue in Settings ("Generated dashboards need one paste into configuration.yaml") containing a snippet like:
 
 ```yaml
 lovelace:
@@ -71,7 +71,7 @@ lovelace:
     # ...one entry per generated dashboard
 ```
 
-Paste that into `configuration.yaml` and restart once. After that, every future scan just rewrites the same files in place - no further manual steps.
+Paste that into `configuration.yaml` and restart once. After that, every future scan just rewrites the same files in place - no further manual steps. The Repairs issue clears itself automatically once it detects the dashboards are registered.
 
 ## Actions
 

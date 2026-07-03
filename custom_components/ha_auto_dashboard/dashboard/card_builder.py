@@ -69,19 +69,23 @@ def native_graph_card(entity: EntityNode, *, hours_to_show: int = 24) -> dict:
     }
 
 
-def grid(cards: list[dict], *, columns: int | None = None) -> dict:
-    """A responsive `type: grid` layout wrapping the given cards.
+def grid(cards: list[dict], *, columns: int | None = None, title: str | None = None) -> dict:
+    """A responsive `type: grid` layout wrapping the given cards, with an
+    optional native section heading (the `grid` card's own `title`, not a
+    separate header card - one less card to render, and it works whether
+    or not Bubble Card is installed).
 
     Column count scales with content instead of a fixed number, capped
-    at 4 so rows stay readable on a wide dashboard.
+    at 4 so rows stay readable on a wide dashboard. Pass a smaller
+    `columns` explicitly to make a group of cards (e.g. simple toggles)
+    render noticeably bigger than the rest.
     """
     if columns is None:
         columns = max(1, min(4, len(cards)))
-    return {"type": "grid", "columns": columns, "square": False, "cards": cards}
-
-
-def vertical_stack(cards: list[dict]) -> dict:
-    return {"type": "vertical-stack", "cards": cards}
+    card: dict = {"type": "grid", "columns": columns, "square": False, "cards": cards}
+    if title:
+        card["title"] = title
+    return card
 
 
 def bubble_separator(name: str, icon: str | None = None) -> dict:
@@ -183,8 +187,11 @@ def logbook_card(entity_ids: list[str], *, hours_to_show: int = 24) -> dict | No
     return {"type": "logbook", "entities": entity_ids, "hours_to_show": hours_to_show}
 
 
-def picture_glance_card(camera_entity_id: str, extra_entity_ids: list[str] | None = None) -> dict:
-    return {"type": "picture-glance", "camera_image": camera_entity_id, "entities": extra_entity_ids or []}
+def picture_glance_card(camera_entity_id: str, extra_entity_ids: list[str] | None = None, *, title: str | None = None) -> dict:
+    card: dict = {"type": "picture-glance", "camera_image": camera_entity_id, "entities": extra_entity_ids or []}
+    if title:
+        card["title"] = title
+    return card
 
 
 def entities_card(title: str, entity_ids: list[str]) -> dict | None:
@@ -232,5 +239,4 @@ class CardTheme:
         entities = visible_entities([graph.entities[eid] for eid in device.entity_ids if eid in graph.entities])
         if not entities:
             return None
-        cards = [self.entity(entity) for entity in entities]
-        return vertical_stack([self.separator(device.name), grid(cards)])
+        return grid([self.entity(entity) for entity in entities], title=device.name)

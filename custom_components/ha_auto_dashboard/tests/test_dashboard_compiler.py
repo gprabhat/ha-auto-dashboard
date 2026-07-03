@@ -17,6 +17,7 @@ from custom_components.ha_auto_dashboard.dashboard.compiler import (
     DASHBOARD_SECURITY,
     compile_dashboards,
 )
+from custom_components.ha_auto_dashboard.dashboard.dashboard_factory import _grouped_grid_cards
 from custom_components.ha_auto_dashboard.dashboard.icons import guess_area_icon
 from custom_components.ha_auto_dashboard.dashboard.resources import FrontendResources
 from custom_components.ha_auto_dashboard.models import AreaNode, DeviceNode, EntityNode, RegistryGraph
@@ -135,10 +136,9 @@ def test_theme_device_excludes_disabled_entities() -> None:
     theme = CardTheme(ALL_PRESENT)
     card = theme.device(device, graph)
     assert card is not None
-    assert card["type"] == "vertical-stack"
-    grid_card = card["cards"][1]
-    assert grid_card["type"] == "grid"
-    assert grid_card["cards"] == [theme.entity(visible)]
+    assert card["type"] == "grid"
+    assert card["title"] == "Hub"
+    assert card["cards"] == [theme.entity(visible)]
 
 
 def test_theme_device_none_when_no_visible_entities() -> None:
@@ -162,6 +162,36 @@ def test_picture_glance_card() -> None:
         "camera_image": "camera.front_door",
         "entities": ["binary_sensor.motion"],
     }
+
+
+def test_grouped_grid_cards_splits_by_domain_with_headings() -> None:
+    theme = CardTheme(ALL_PRESENT)
+    entities = [
+        EntityNode(entity_id="light.a", name="A", domain="light"),
+        EntityNode(entity_id="switch.a", name="A", domain="switch"),
+        EntityNode(entity_id="sensor.a", name="A", domain="sensor", unit_of_measurement="W"),
+        EntityNode(entity_id="vacuum.a", name="A", domain="vacuum"),  # no dedicated group -> "Other"
+    ]
+
+    cards = _grouped_grid_cards(entities, theme)
+    titles = [c["title"] for c in cards]
+
+    assert titles == ["Lights", "Switches & Locks", "Sensors", "Other"]
+
+
+def test_grouped_grid_cards_gives_switches_fewer_columns() -> None:
+    theme = CardTheme(ALL_PRESENT)
+    entities = [EntityNode(entity_id=f"switch.{i}", name=str(i), domain="switch") for i in range(4)]
+
+    cards = _grouped_grid_cards(entities, theme)
+
+    assert len(cards) == 1
+    assert cards[0]["title"] == "Switches & Locks"
+    assert cards[0]["columns"] == 2  # fewer columns than the usual dynamic cap -> bigger tiles
+
+
+def test_grouped_grid_cards_empty_when_no_entities() -> None:
+    assert _grouped_grid_cards([], CardTheme(ALL_PRESENT)) == []
 
 
 def test_compile_dashboards_produces_expected_slugs() -> None:
@@ -195,15 +225,17 @@ def test_compile_dashboards_rooms_has_one_view_per_area() -> None:
     dashboards = compile_dashboards(_sample_graph())
     rooms_views = dashboards[DASHBOARD_ROOMS]["views"]
     assert [view["path"] for view in rooms_views] == ["kitchen"]
-    grid_card = rooms_views[0]["cards"][1]
+    grid_card = rooms_views[0]["cards"][0]
+    assert grid_card["title"] == "Lights"
     assert grid_card["cards"] == [{"type": "custom:mushroom-light-card", "entity": "light.kitchen_ceiling"}]
 
 
 def test_compile_dashboards_homelab_uses_mini_graph_for_numeric_sensor() -> None:
     dashboards = compile_dashboards(_sample_graph())
     homelab_cards = dashboards[DASHBOARD_HOMELAB]["views"][0]["cards"]
-    device_stack = homelab_cards[0]
-    grid_card = device_stack["cards"][1]
+    grid_card = homelab_cards[0]
+    assert grid_card["type"] == "grid"
+    assert grid_card["title"] == "Proxmox PVE2 Node"
     assert grid_card["cards"][0]["type"] == "custom:mini-graph-card"
 
 
@@ -222,7 +254,7 @@ def test_compile_dashboards_monitoring_omitted_when_empty() -> None:
 def test_compile_dashboards_respects_missing_resources() -> None:
     dashboards = compile_dashboards(_sample_graph(), NONE_PRESENT)
     rooms_views = dashboards[DASHBOARD_ROOMS]["views"]
-    grid_card = rooms_views[0]["cards"][1]
+    grid_card = rooms_views[0]["cards"][0]
     assert grid_card["cards"] == [{"type": "light", "entity": "light.kitchen_ceiling"}]
 
 
@@ -241,5 +273,6 @@ def test_compile_dashboards_cloud_only_when_cloud_area_present() -> None:
 
     dashboards = compile_dashboards(graph)
     assert DASHBOARD_CLOUD in dashboards
-    grid_card = dashboards[DASHBOARD_CLOUD]["views"][0]["cards"][1]
+    grid_card = dashboards[DASHBOARD_CLOUD]["views"][0]["cards"][0]
+    assert grid_card["title"] == "Cloud Server"
     assert grid_card["cards"] == [{"type": "custom:mushroom-entity-card", "entity": entity.entity_id}]
