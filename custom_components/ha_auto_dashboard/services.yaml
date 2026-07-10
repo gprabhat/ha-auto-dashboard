@@ -12,3 +12,21 @@ generate:
     Recompile the Home, Rooms, Homelab, Security, Monitoring, Admin and
     Cloud dashboards from the current discovery graph and write them to
     the dashboards/ folder, without doing a fresh scan first.
+  fields:
+    view:
+      name: View
+      description: >-
+        Optional - only recompile and write this one dashboard, leaving
+        the others untouched. Omit to regenerate all dashboards.
+      required: false
+      example: "home"
+      selector:
+        select:
+          options:
+            - home
+            - rooms
+            - homelab
+            - security
+            - monitoring
+            - admin
+            - cloud

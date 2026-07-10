@@ -16,8 +16,25 @@ DASHBOARD_MONITORING: Final = "auto_monitoring"
 DASHBOARD_ADMIN: Final = "auto_admin"
 DASHBOARD_CLOUD: Final = "auto_cloud"
 
+# Short names accepted by the `generate` service's optional `view` field,
+# mapped to the internal dashboard slug.
+VIEW_SLUGS: Final[dict[str, str]] = {
+    "home": DASHBOARD_HOME,
+    "rooms": DASHBOARD_ROOMS,
+    "homelab": DASHBOARD_HOMELAB,
+    "security": DASHBOARD_SECURITY,
+    "monitoring": DASHBOARD_MONITORING,
+    "admin": DASHBOARD_ADMIN,
+    "cloud": DASHBOARD_CLOUD,
+}
 
-def compile_dashboards(graph: RegistryGraph, resources: FrontendResources | None = None) -> dict[str, dict]:
+
+def compile_dashboards(
+    graph: RegistryGraph,
+    resources: FrontendResources | None = None,
+    *,
+    only: str | None = None,
+) -> dict[str, dict]:
     """Return ``{slug: {"title", "icon", "views": [...]}}`` for every dashboard.
 
     `resources` controls which optional HACS frontend cards (Mushroom,
@@ -28,6 +45,11 @@ def compile_dashboards(graph: RegistryGraph, resources: FrontendResources | None
     The Cloud dashboard is only included when the graph has a cloud-related
     area; the rest are always produced (with a placeholder card when empty)
     so the installer always has a stable, predictable set of files to write.
+
+    `only`, when given, is an internal dashboard slug (e.g. `auto_home`,
+    see `VIEW_SLUGS`) - the returned dict is filtered down to that one
+    entry so callers can regenerate a single dashboard without touching
+    the others.
     """
     theme = CardTheme(resources)
 
@@ -70,5 +92,8 @@ def compile_dashboards(graph: RegistryGraph, resources: FrontendResources | None
             "icon": "mdi:cloud",
             "views": [cloud_view],
         }
+
+    if only is not None:
+        dashboards = {slug: config for slug, config in dashboards.items() if slug == only}
 
     return dashboards

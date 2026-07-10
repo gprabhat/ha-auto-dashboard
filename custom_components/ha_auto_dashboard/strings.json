@@ -10,6 +10,26 @@
       "already_configured": "HA Auto Dashboard is already configured."
     }
   },
+  "options": {
+    "step": {
+      "init": {
+        "title": "HA Auto Dashboard options",
+        "description": "All settings are optional - HA Auto Dashboard works with none of these set.",
+        "data": {
+          "excluded_areas": "Areas to exclude",
+          "excluded_entities": "Entities to exclude",
+          "require_confirmation": "Require confirmation before applying changes",
+          "storage_mode": "Use storage-mode dashboards (experimental, automatic)"
+        },
+        "data_description": {
+          "excluded_areas": "Devices and entities in these areas are left out of every generated dashboard.",
+          "excluded_entities": "These entities are left out of every generated dashboard, regardless of area.",
+          "require_confirmation": "When a scan produces a changed dashboard, hold off writing it and raise a Repairs issue with a diff instead - nothing is applied until you confirm it there.",
+          "storage_mode": "Register dashboards directly in Home Assistant's UI storage instead of writing YAML files that need a one-time configuration.yaml paste. Relies on undocumented Home Assistant internals - falls back to file-only mode automatically if it fails."
+        }
+      }
+    }
+  },
   "services": {
     "scan": {
       "name": "Scan",
@@ -17,7 +37,13 @@
     },
     "generate": {
       "name": "Generate",
-      "description": "Recompile the Home, Rooms, Homelab, Security, Monitoring, Admin and Cloud dashboards from the current discovery graph and write them to the dashboards/ folder, without doing a fresh scan first."
+      "description": "Recompile the Home, Rooms, Homelab, Security, Monitoring, Admin and Cloud dashboards from the current discovery graph and write them to the dashboards/ folder, without doing a fresh scan first.",
+      "fields": {
+        "view": {
+          "name": "View",
+          "description": "Optional - only recompile and write this one dashboard, leaving the others untouched. Omit to regenerate all dashboards."
+        }
+      }
     }
   },
   "issues": {
@@ -28,6 +54,18 @@
     "register_dashboards": {
       "title": "Generated dashboards need one paste into configuration.yaml",
       "description": "Add this to `configuration.yaml` and restart Home Assistant to register the generated dashboards (one-time step - future scans just rewrite the same files in place):\n\n```yaml\n{snippet}\n```"
+    },
+    "pending_dashboard_change": {
+      "title": "Generated dashboards have pending changes",
+      "description": "The next scan produced a different dashboard than what's on disk. Nothing has been written yet - review the diff and confirm to apply it.",
+      "fix_flow": {
+        "step": {
+          "confirm": {
+            "title": "Apply pending dashboard changes?",
+            "description": "```diff\n{diff}\n```"
+          }
+        }
+      }
     }
   }
 }

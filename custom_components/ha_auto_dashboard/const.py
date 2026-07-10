@@ -6,8 +6,15 @@ from typing import Final
 DOMAIN: Final = "ha_auto_dashboard"
 
 # Config entry / options keys
-CONF_SCAN_ON_STARTUP: Final = "scan_on_startup"
-DEFAULT_SCAN_ON_STARTUP: Final = True
+CONF_EXCLUDED_AREAS: Final = "excluded_areas"
+CONF_EXCLUDED_ENTITIES: Final = "excluded_entities"
+CONF_REQUIRE_CONFIRMATION: Final = "require_confirmation"
+CONF_STORAGE_MODE: Final = "storage_mode"
+
+DEFAULT_EXCLUDED_AREAS: Final[list[str]] = []
+DEFAULT_EXCLUDED_ENTITIES: Final[list[str]] = []
+DEFAULT_REQUIRE_CONFIRMATION: Final = False
+DEFAULT_STORAGE_MODE: Final = False
 
 # hass.data keys
 DATA_COORDINATOR: Final = "coordinator"
@@ -77,18 +84,38 @@ MUSHROOM_DOMAIN_CARDS: Final[dict[str, str]] = {
     "water_heater": "custom:mushroom-water-heater-card",
     "number": "custom:mushroom-number-card",
     "select": "custom:mushroom-select-card",
+    "switch": "custom:mushroom-entity-card",
+    "binary_sensor": "custom:mushroom-entity-card",
 }
 MUSHROOM_GENERIC_CARD: Final = "custom:mushroom-entity-card"
 
 # Native HA card fallback per domain, used when Mushroom isn't installed.
+# Domains without a dedicated native card type render as a `tile` card;
+# NATIVE_TILE_FEATURES below adds domain-appropriate controls to those.
 NATIVE_DOMAIN_CARDS: Final[dict[str, str]] = {
     "light": "light",
     "climate": "thermostat",
     "media_player": "media-control",
     "alarm_control_panel": "alarm-panel",
     "humidifier": "humidifier",
+    "cover": "tile",
+    "fan": "tile",
+    "lock": "tile",
+    "vacuum": "tile",
+    "switch": "tile",
+    "binary_sensor": "tile",
 }
 NATIVE_GENERIC_CARD: Final = "tile"
+
+# Extra `features` entries for domains whose native representation is a
+# bare `tile` card - without these a cover/fan/lock/vacuum tile has no
+# actionable controls, just a state label.
+NATIVE_TILE_FEATURES: Final[dict[str, list[dict]]] = {
+    "cover": [{"type": "cover-open-close"}],
+    "fan": [{"type": "fan-speed"}],
+    "lock": [{"type": "lock-commands"}],
+    "vacuum": [{"type": "vacuum-commands"}],
+}
 
 # Domains that natively carry a live location and belong on a map card.
 LOCATION_DOMAINS: Final[tuple[str, ...]] = ("person", "device_tracker")
@@ -96,3 +123,4 @@ LOCATION_DOMAINS: Final[tuple[str, ...]] = ("person", "device_tracker")
 # Repairs issue ids.
 ISSUE_MISSING_RESOURCES: Final = "missing_frontend_resources"
 ISSUE_REGISTER_DASHBOARDS: Final = "register_dashboards"
+ISSUE_PENDING_DASHBOARD_CHANGE: Final = "pending_dashboard_change"

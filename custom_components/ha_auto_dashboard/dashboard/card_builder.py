@@ -16,7 +16,13 @@ can be tested without any Home Assistant runtime.
 """
 from __future__ import annotations
 
-from ..const import MUSHROOM_DOMAIN_CARDS, MUSHROOM_GENERIC_CARD, NATIVE_DOMAIN_CARDS, NATIVE_GENERIC_CARD
+from ..const import (
+    MUSHROOM_DOMAIN_CARDS,
+    MUSHROOM_GENERIC_CARD,
+    NATIVE_DOMAIN_CARDS,
+    NATIVE_GENERIC_CARD,
+    NATIVE_TILE_FEATURES,
+)
 from ..models import AreaNode, DeviceNode, EntityNode, RegistryGraph
 from .resources import ALL_PRESENT, FrontendResources
 
@@ -42,7 +48,12 @@ def mushroom_card(entity: EntityNode) -> dict:
 
 def native_entity_card(entity: EntityNode) -> dict:
     card_type = NATIVE_DOMAIN_CARDS.get(entity.domain, NATIVE_GENERIC_CARD)
-    return {"type": card_type, "entity": entity.entity_id}
+    card: dict = {"type": card_type, "entity": entity.entity_id}
+    if card_type == "tile":
+        features = NATIVE_TILE_FEATURES.get(entity.domain)
+        if features:
+            card["features"] = features
+    return card
 
 
 def mini_graph_card(entity: EntityNode, *, hours_to_show: int = 24) -> dict:

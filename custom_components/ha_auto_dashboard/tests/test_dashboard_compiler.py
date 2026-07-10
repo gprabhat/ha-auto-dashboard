@@ -123,6 +123,51 @@ def test_theme_falls_back_to_native_cards_when_resources_missing() -> None:
     assert theme.separator("Kitchen") == {"type": "heading", "heading": "Kitchen"}
 
 
+def test_theme_uses_mushroom_entity_card_for_switch_and_binary_sensor() -> None:
+    theme = CardTheme(ALL_PRESENT)
+    switch = EntityNode(entity_id="switch.a", name="A", domain="switch")
+    binary_sensor = EntityNode(entity_id="binary_sensor.a", name="A", domain="binary_sensor")
+
+    assert theme.entity(switch) == {"type": "custom:mushroom-entity-card", "entity": "switch.a"}
+    assert theme.entity(binary_sensor) == {"type": "custom:mushroom-entity-card", "entity": "binary_sensor.a"}
+
+
+def test_theme_native_binary_sensor_is_bare_tile() -> None:
+    theme = CardTheme(NONE_PRESENT)
+    binary_sensor = EntityNode(entity_id="binary_sensor.a", name="A", domain="binary_sensor")
+
+    assert theme.entity(binary_sensor) == {"type": "tile", "entity": "binary_sensor.a"}
+
+
+def test_theme_native_tile_gets_domain_features() -> None:
+    theme = CardTheme(NONE_PRESENT)
+    cover = EntityNode(entity_id="cover.a", name="A", domain="cover")
+    fan = EntityNode(entity_id="fan.a", name="A", domain="fan")
+    lock = EntityNode(entity_id="lock.a", name="A", domain="lock")
+    vacuum = EntityNode(entity_id="vacuum.a", name="A", domain="vacuum")
+
+    assert theme.entity(cover) == {
+        "type": "tile",
+        "entity": "cover.a",
+        "features": [{"type": "cover-open-close"}],
+    }
+    assert theme.entity(fan) == {
+        "type": "tile",
+        "entity": "fan.a",
+        "features": [{"type": "fan-speed"}],
+    }
+    assert theme.entity(lock) == {
+        "type": "tile",
+        "entity": "lock.a",
+        "features": [{"type": "lock-commands"}],
+    }
+    assert theme.entity(vacuum) == {
+        "type": "tile",
+        "entity": "vacuum.a",
+        "features": [{"type": "vacuum-commands"}],
+    }
+
+
 def test_theme_device_excludes_disabled_entities() -> None:
     graph = RegistryGraph()
     device = DeviceNode(device_id="d1", name="Hub")
@@ -205,6 +250,12 @@ def test_compile_dashboards_produces_expected_slugs() -> None:
     }
     # No cloud-related area in the sample graph.
     assert DASHBOARD_CLOUD not in dashboards
+
+
+def test_compile_dashboards_only_returns_single_slug() -> None:
+    dashboards = compile_dashboards(_sample_graph(), only=DASHBOARD_HOME)
+
+    assert set(dashboards) == {DASHBOARD_HOME}
 
 
 def test_compile_dashboards_home_has_title_and_area_grid() -> None:

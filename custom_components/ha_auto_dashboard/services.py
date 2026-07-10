@@ -3,13 +3,17 @@ from __future__ import annotations
 
 import logging
 
+import voluptuous as vol
 from homeassistant.core import HomeAssistant, ServiceCall
 
 from .const import DATA_COORDINATOR, DOMAIN, SERVICE_GENERATE, SERVICE_SCAN
 from .coordinator import DiscoveryCoordinator
 from .dashboard import async_generate_and_install
+from .dashboard.compiler import VIEW_SLUGS
 
 _LOGGER = logging.getLogger(__name__)
+
+_GENERATE_SCHEMA = vol.Schema({vol.Optional("view"): vol.In(VIEW_SLUGS)})
 
 
 def async_setup_services(hass: HomeAssistant) -> None:
@@ -27,15 +31,20 @@ def async_setup_services(hass: HomeAssistant) -> None:
             )
 
     async def _async_handle_generate(call: ServiceCall) -> None:
+        view = call.data.get("view")
         for entry_data in hass.data.get(DOMAIN, {}).values():
             coordinator: DiscoveryCoordinator = entry_data[DATA_COORDINATOR]
             if coordinator.data is None:
                 continue
-            written = await async_generate_and_install(hass, coordinator.data)
+            written = await async_generate_and_install(
+                hass, coordinator.data, entry=coordinator.entry, view=view
+            )
             _LOGGER.info("HA Auto Dashboard generate complete: %s", written)
 
     hass.services.async_register(DOMAIN, SERVICE_SCAN, _async_handle_scan)
-    hass.services.async_register(DOMAIN, SERVICE_GENERATE, _async_handle_generate)
+    hass.services.async_register(
+        DOMAIN, SERVICE_GENERATE, _async_handle_generate, schema=_GENERATE_SCHEMA
+    )
 
 
 def async_unload_services(hass: HomeAssistant) -> None:

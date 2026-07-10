@@ -5,13 +5,14 @@ import logging
 from collections.abc import Callable
 from datetime import timedelta
 
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import area_registry as ar
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 
-from .const import DOMAIN
+from .const import CONF_EXCLUDED_AREAS, CONF_EXCLUDED_ENTITIES, DOMAIN
 from .discovery import async_build_graph
 from .models import RegistryGraph
 
@@ -25,17 +26,22 @@ _SCAN_INTERVAL = timedelta(hours=6)
 class DiscoveryCoordinator(DataUpdateCoordinator[RegistryGraph]):
     """Owns the discovered RegistryGraph and refreshes it on demand."""
 
-    def __init__(self, hass: HomeAssistant) -> None:
+    def __init__(self, hass: HomeAssistant, entry: ConfigEntry) -> None:
         super().__init__(
             hass,
             _LOGGER,
             name=f"{DOMAIN} discovery",
             update_interval=_SCAN_INTERVAL,
         )
+        self.entry = entry
         self._remove_listeners: list[Callable[[], None]] = []
 
     async def _async_update_data(self) -> RegistryGraph:
-        return await async_build_graph(self.hass)
+        return await async_build_graph(
+            self.hass,
+            excluded_areas=set(self.entry.options.get(CONF_EXCLUDED_AREAS, [])),
+            excluded_entities=set(self.entry.options.get(CONF_EXCLUDED_ENTITIES, [])),
+        )
 
     @callback
     def async_setup_registry_listeners(self) -> None:

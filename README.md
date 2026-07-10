@@ -11,7 +11,8 @@ Early / actively developed. Phases 1-3 of the roadmap are implemented and covere
 - ✅ **Discovery engine** - reads the area/device/entity registries into an internal graph and classifies everything into Home / Rooms / Homelab / Security / Monitoring / Admin / Cloud
 - ✅ **Dashboard compiler** - turns that graph into real Lovelace dashboard YAML
 - ✅ **Dashboard installer** - writes the compiled dashboards to disk and tells you how to register them
-- ⏳ Not yet built: fully automatic Lovelace registration (no manual step), a "Dashboard Studio" sidebar UI, preview/diff tooling
+- ✅ **Options** - exclude areas/entities from generation, an opt-in confirm-before-apply gate, and opt-in fully-automatic (storage-mode) dashboard registration
+- ⏳ Not yet built: a "Dashboard Studio" sidebar UI
 
 ## What it generates
 
@@ -25,7 +26,7 @@ Early / actively developed. Phases 1-3 of the roadmap are implemented and covere
 | **Admin** | Update entities as actionable cards, plus an update history logbook |
 | **Cloud** | Only generated if an area name contains "cloud" (e.g. a cloud/VPS host area) |
 
-Cards are chosen per entity domain rather than falling back to a flat list: lights, climate, covers, fans, locks, media players, vacuums, alarms, people and updates each get their own [Mushroom](https://github.com/piitaya/lovelace-mushroom) card type, and numeric sensors get [mini-graph-card](https://github.com/kalkih/mini-graph-card) trend lines. Within a view, entities are grouped into titled boxes by domain (Lights, Climate & Covers, Media, Switches & Locks, Sensors, Other) instead of one long mixed list - switches and locks get a smaller column count than the rest so their tiles render noticeably bigger, since a simple toggle needs less detail per tile than a sensor graph.
+Cards are chosen per entity domain rather than falling back to a flat list: lights, climate, covers, fans, locks, media players, vacuums, alarms, people, switches, binary sensors and updates each get their own [Mushroom](https://github.com/piitaya/lovelace-mushroom) card type (or a native fallback), and numeric sensors get [mini-graph-card](https://github.com/kalkih/mini-graph-card) trend lines. Without Mushroom installed, covers/fans/locks/vacuums still get actionable native `tile` cards with the matching HA tile feature (open/close, speed, lock/unlock, vacuum commands) rather than a bare state label. Within a view, entities are grouped into titled boxes by domain (Lights, Climate & Covers, Media, Switches & Locks, Sensors, Other) instead of one long mixed list - switches and locks get a smaller column count than the rest so their tiles render noticeably bigger, since a simple toggle needs less detail per tile than a sensor graph.
 
 ### Frontend resources you need installed
 
@@ -51,9 +52,17 @@ The integration checks the Lovelace resources collection before generating: anyt
 
 Copy `custom_components/ha_auto_dashboard/` into `<config>/custom_components/ha_auto_dashboard/`, restart Home Assistant, then add the integration as above.
 
+## Options
+
+Settings → Devices & Services → HA Auto Dashboard → **Configure**. Everything here is optional - the integration works with none of it set:
+
+- **Areas/entities to exclude** - leave sensitive or irrelevant areas and entities out of every generated dashboard.
+- **Require confirmation before applying changes** - off by default (a scan/generate writes dashboards immediately, as always). Turn it on and a changed dashboard raises a fixable **Repairs** issue with a diff instead of writing right away; nothing is applied until you confirm it there.
+- **Use storage-mode dashboards (experimental, automatic)** - off by default (dashboards are written as YAML files, see below). Turn it on and the integration additionally registers each dashboard directly in Home Assistant's UI storage, so it shows up in the sidebar with no `configuration.yaml` step. This relies on undocumented Home Assistant internals, so it's opt-in and falls back to file-only mode automatically if it fails.
+
 ## Registering the generated dashboards (one-time step)
 
-Home Assistant has no stable API for a custom integration to register a YAML-mode Lovelace dashboard at runtime, so after the first scan you'll get a **Repairs** issue in Settings ("Generated dashboards need one paste into configuration.yaml") containing a snippet like:
+Home Assistant has no stable API for a custom integration to register a YAML-mode Lovelace dashboard at runtime, so after the first scan you'll get a **Repairs** issue in Settings ("Generated dashboards need one paste into configuration.yaml") containing a snippet like (skip this if you turned on storage-mode dashboards above):
 
 ```yaml
 lovelace:
@@ -76,7 +85,7 @@ Paste that into `configuration.yaml` and restart once. After that, every future 
 ## Actions
 
 - `ha_auto_dashboard.scan` - re-discover areas/devices/entities and regenerate dashboards immediately (also runs automatically on startup, on registry changes, and every 6 hours as a safety net)
-- `ha_auto_dashboard.generate` - recompile and rewrite the dashboards from the current graph, without doing a fresh scan
+- `ha_auto_dashboard.generate` - recompile and rewrite the dashboards from the current graph, without doing a fresh scan. Takes an optional `view` field (`home`/`rooms`/`homelab`/`security`/`monitoring`/`admin`/`cloud`) to recompile just that one dashboard, leaving the others untouched.
 
 Diagnostics (Settings → Devices & Services → HA Auto Dashboard → Download diagnostics) expose the full discovered graph, classification stats, and a summary of the compiled dashboards.
 

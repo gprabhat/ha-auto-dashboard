@@ -11,17 +11,39 @@ from .device_manager import collect_devices
 from .entity_manager import collect_entities
 
 
-async def async_build_graph(hass: HomeAssistant) -> RegistryGraph:
+async def async_build_graph(
+    hass: HomeAssistant,
+    *,
+    excluded_areas: set[str] | None = None,
+    excluded_entities: set[str] | None = None,
+) -> RegistryGraph:
     """Discover areas/devices/entities and assemble the classified graph.
 
     Registry reads are synchronous but fast (in-memory dict lookups), so
     this only needs to be a coroutine for the sake of coordinator scheduling.
+
+    `excluded_areas`/`excluded_entities` drop the matching nodes before
+    linking/classification; excluding an area cascades to the devices and
+    entities that live in it.
     """
     graph = RegistryGraph()
 
     graph.areas = collect_areas(hass)
     graph.devices = collect_devices(hass)
     graph.entities = collect_entities(hass, graph.devices)
+
+    if excluded_areas:
+        graph.areas = {aid: a for aid, a in graph.areas.items() if aid not in excluded_areas}
+        graph.devices = {
+            did: d for did, d in graph.devices.items() if d.area_id not in excluded_areas
+        }
+        graph.entities = {
+            eid: e for eid, e in graph.entities.items() if e.area_id not in excluded_areas
+        }
+    if excluded_entities:
+        graph.entities = {
+            eid: e for eid, e in graph.entities.items() if eid not in excluded_entities
+        }
 
     # Link entities onto their owning device and area.
     for entity in graph.entities.values():
