@@ -32,6 +32,7 @@ class DiscoveryCoordinator(DataUpdateCoordinator[RegistryGraph]):
             _LOGGER,
             name=f"{DOMAIN} discovery",
             update_interval=_SCAN_INTERVAL,
+            config_entry=entry,
         )
         self.entry = entry
         self._remove_listeners: list[Callable[[], None]] = []
