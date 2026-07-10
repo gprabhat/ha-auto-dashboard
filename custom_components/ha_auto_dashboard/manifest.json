@@ -1,12 +1,18 @@
 {
   "domain": "ha_auto_dashboard",
   "name": "HA Auto Dashboard",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "documentation": "https://github.com/gprabhat/ha-auto-dashboard",
   "issue_tracker": "https://github.com/gprabhat/ha-auto-dashboard/issues",
   "codeowners": [
     "@gprabhat"
   ],
   "config_flow": true,
+  "dependencies": [
+    "http",
+    "frontend",
+    "panel_custom",
+    "websocket_api"
+  ],
   "iot_class": "calculated"
 }

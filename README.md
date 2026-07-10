@@ -12,7 +12,7 @@ Early / actively developed. Phases 1-3 of the roadmap are implemented and covere
 - ✅ **Dashboard compiler** - turns that graph into real Lovelace dashboard YAML
 - ✅ **Dashboard installer** - writes the compiled dashboards to disk and tells you how to register them
 - ✅ **Options** - exclude areas/entities from generation, an opt-in confirm-before-apply gate, and opt-in fully-automatic (storage-mode) dashboard registration
-- ⏳ Not yet built: a "Dashboard Studio" sidebar UI
+- ✅ **Dashboard Studio** - a sidebar panel for hiding, renaming/re-iconing, reordering and adding cards on top of what's auto-generated, without those edits being lost on the next scan
 
 ## What it generates
 
@@ -59,6 +59,17 @@ Settings → Devices & Services → HA Auto Dashboard → **Configure**. Everyth
 - **Areas/entities to exclude** - leave sensitive or irrelevant areas and entities out of every generated dashboard.
 - **Require confirmation before applying changes** - off by default (a scan/generate writes dashboards immediately, as always). Turn it on and a changed dashboard raises a fixable **Repairs** issue with a diff instead of writing right away; nothing is applied until you confirm it there.
 - **Use storage-mode dashboards (experimental, automatic)** - off by default (dashboards are written as YAML files, see below). Turn it on and the integration additionally registers each dashboard directly in Home Assistant's UI storage, so it shows up in the sidebar with no `configuration.yaml` step. This relies on undocumented Home Assistant internals, so it's opt-in and falls back to file-only mode automatically if it fails.
+
+## Dashboard Studio
+
+An admin-only sidebar panel ("Dashboard Studio") lets you customize the generated dashboards without hand-editing YAML:
+
+- **Reorder** cards within a section by dragging them.
+- **Hide** a card you don't want, per view.
+- **Rename / re-icon** a card.
+- **Add** any discovered entity that isn't already placed in the current view.
+
+These edits are saved separately from the generated YAML and re-applied on top of it every time the integration rescans - so a new entity showing up, or a device getting renamed, won't wipe out your customizations. Edits only take effect after you hit **Save**; if "Require confirmation before applying changes" is on, saving still goes through the normal Repairs confirm step. Hiding/reordering/renaming works on individual entity cards, within whichever section (Lights, Switches & Locks, ...) they're already auto-grouped into - dragging a card to a different section isn't supported yet, and other structural cards (map, logbook, history graphs, area cards) aren't directly editable.
 
 ## Registering the generated dashboards (one-time step)
 

@@ -7,7 +7,9 @@ from homeassistant.core import HomeAssistant
 from .const import DATA_COORDINATOR, DOMAIN
 from .coordinator import DiscoveryCoordinator
 from .dashboard import async_generate_and_install
+from .panel import async_register_panel, async_unregister_panel
 from .services import async_setup_services, async_unload_services
+from .websocket_api import async_setup_websocket_api
 
 PLATFORMS: list[str] = []
 
@@ -44,6 +46,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     }
 
     async_setup_services(hass)
+    async_setup_websocket_api(hass)
+    await async_register_panel(hass)
 
     return True
 
@@ -58,5 +62,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         coordinator.async_unload()
 
     async_unload_services(hass)
+    if not hass.data.get(DOMAIN):
+        await async_unregister_panel(hass)
 
     return True

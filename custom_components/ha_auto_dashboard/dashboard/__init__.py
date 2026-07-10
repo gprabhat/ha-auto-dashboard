@@ -17,6 +17,7 @@ from ..models import RegistryGraph
 from .compiler import VIEW_SLUGS, compile_dashboards
 from .installer import async_compute_dashboard_diff, async_install_dashboards, configuration_snippet
 from .issues import async_update_registration_issue, async_update_resource_issue
+from .overrides import OverridesStore, apply_overrides
 from .resources import async_detect_frontend_resources
 from .storage_registration import async_register_storage_dashboards
 
@@ -63,10 +64,18 @@ async def async_generate_and_install(
     dashboard (one of `compiler.VIEW_SLUGS`'s short names); the
     registration-reminder issue is only updated on a full (unscoped) run,
     since it reflects the complete dashboard set.
+
+    Any Dashboard Studio overrides (hidden/renamed/reordered/added cards)
+    are layered on right after compiling and before the confirm-gate diff,
+    so a require_confirmation diff only ever surfaces genuine
+    auto-generation changes - not the user's own already-saved edits.
     """
     resources = await async_detect_frontend_resources(hass)
     only = VIEW_SLUGS.get(view) if view else None
     dashboards = compile_dashboards(graph, resources, only=only)
+
+    overrides = await OverridesStore(hass, entry.entry_id).async_load()
+    dashboards = apply_overrides(overrides, dashboards, graph=graph, resources=resources)
 
     async_update_resource_issue(hass, resources)
 
