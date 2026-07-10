@@ -7,6 +7,7 @@ Deliberately does *not* go through the full `hass.config_entries.async_setup`
 set up (the standard minimal pattern for testing websocket commands), plus
 this integration's own coordinator/websocket registration wired up by hand.
 """
+from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant
 from homeassistant.setup import async_setup_component
 from pytest_homeassistant_custom_component.common import MockConfigEntry
@@ -22,6 +23,10 @@ async def _setup_entry(hass: HomeAssistant) -> MockConfigEntry:
 
     entry = MockConfigEntry(domain=DOMAIN)
     entry.add_to_hass(hass)
+    # async_config_entry_first_refresh() requires the entry to be in this
+    # state, which normally only happens mid-way through the real
+    # hass.config_entries.async_setup() flow this test deliberately skips.
+    entry.mock_state(hass, ConfigEntryState.SETUP_IN_PROGRESS)
 
     coordinator = DiscoveryCoordinator(hass, entry)
     await coordinator.async_config_entry_first_refresh()
